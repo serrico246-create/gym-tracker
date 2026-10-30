@@ -2,43 +2,44 @@ const WORKOUT_PLAN = {
   day1: {
     title: "Giorno 1 · Petto & Dorso",
     exercises: [
-      { id: "d1_e1", name: "Spinte Manubri Panca Piana", sets: 4, reps: "8-10", rest: 120, superset: false },
-      { id: "d1_e2", name: "Lat Machine Presa Prona", sets: 4, reps: "10", rest: 90, superset: false },
-      { id: "d1_e3", name: "Panca Inclinata Manubri", sets: 3, reps: "10-12", rest: 90, superset: false },
-      { id: "d1_e4", name: "Pulley Basso + Croci ai Cavi", sets: 3, reps: "10+12", rest: 90, superset: true }
+      { id: "d1_e1", name: "Spinte Manubri Panca Piana", sets: 4, reps: "8-10", rest: 120 },
+      { id: "d1_e2", name: "Lat Machine Presa Prona", sets: 4, reps: "10", rest: 90 },
+      { id: "d1_e3", name: "Panca Inclinata Manubri", sets: 3, reps: "10-12", rest: 90 },
+      { id: "d1_e4", name: "Pulley Basso", sets: 3, reps: "10+12", rest: 90 }
     ]
   },
   day2: {
     title: "Giorno 2 · Spalle & Braccia",
     exercises: [
-      { id: "d2_e1", name: "Lento Avanti Manubri", sets: 4, reps: "8-10", rest: 120, superset: false },
-      { id: "d2_e2", name: "Alzate Laterali ai Cavi", sets: 4, reps: "12-15", rest: 60, superset: false },
-      { id: "d2_e3", name: "Curl Manubri Panca 60° + Pushdown", sets: 4, reps: "10+12", rest: 75, superset: true },
-      { id: "d2_e4", name: "Hammer Curl + French Press Cavo", sets: 3, reps: "12+12", rest: 75, superset: true }
+      { id: "d2_e1", name: "Lento Avanti Manubri", sets: 4, reps: "8-10", rest: 120 },
+      { id: "d2_e2", name: "Alzate Laterali ai Cavi", sets: 4, reps: "12-15", rest: 60 },
+      { id: "d2_e3", name: "Curl Manubri Panca 60°", sets: 4, reps: "10", rest: 75 },
+      { id: "d2_e4", name: "Pushdown Tricipiti", sets: 3, reps: "12", rest: 75 }
     ]
   },
   day3: {
     title: "Giorno 3 · Gambe & Core",
     exercises: [
-      { id: "d3_e1", name: "Leg Press 45°", sets: 4, reps: "10", rest: 120, superset: false },
-      { id: "d3_e2", name: "Stacco Rumeno Manubri", sets: 4, reps: "10-12", rest: 90, superset: false },
-      { id: "d3_e3", name: "Leg Extension + Leg Curl", sets: 3, reps: "12+12", rest: 75, superset: true },
-      { id: "d3_e4", name: "Calf Press + Crunch al Cavo", sets: 4, reps: "15+15", rest: 60, superset: true }
+      { id: "d3_e1", name: "Leg Press 45°", sets: 4, reps: "10", rest: 120 },
+      { id: "d3_e2", name: "Stacco Rumeno Manubri", sets: 4, reps: "10-12", rest: 90 },
+      { id: "d3_e3", name: "Leg Extension", sets: 3, reps: "12", rest: 75 },
+      { id: "d3_e4", name: "Calf Press", sets: 4, reps: "15", rest: 60 }
     ]
   },
   day4: {
     title: "Giorno 4 · Richiamo Upper & Core",
     exercises: [
-      { id: "d4_e1", name: "Chest Press Convergente", sets: 3, reps: "10-12", rest: 90, superset: false },
-      { id: "d4_e2", name: "Rematore con Manubrio", sets: 3, reps: "10", rest: 90, superset: false },
-      { id: "d4_e3", name: "Face Pull + Alzate Laterali", sets: 3, reps: "15+12", rest: 60, superset: true },
-      { id: "d4_e4", name: "Plank + Leg Raise", sets: 3, reps: "Max", rest: 60, superset: true }
+      { id: "d4_e1", name: "Chest Press Convergente", sets: 3, reps: "10-12", rest: 90 },
+      { id: "d4_e2", name: "Rematore con Manubrio", sets: 3, reps: "10", rest: 90 },
+      { id: "d4_e3", name: "Face Pull", sets: 3, reps: "15", rest: 60 },
+      { id: "d4_e4", name: "Plank", sets: 3, reps: "Max", rest: 60 }
     ]
   }
 };
 
 let currentDay = localStorage.getItem('active_day') || 'day1';
 let savedData = JSON.parse(localStorage.getItem('gym_pro_data')) || {};
+let weekStatus = JSON.parse(localStorage.getItem('gym_week_status')) || {}; // { 0: 'orange', 1: 'green', ... }
 let timerInterval = null;
 let remainingSeconds = 0;
 
@@ -48,9 +49,57 @@ const tabBtns = document.querySelectorAll('.tab-btn');
 const tabIndicator = document.getElementById('tab-indicator');
 const timerBar = document.getElementById('rest-timer');
 const timerDisplay = document.getElementById('timer-display');
+const progressFill = document.getElementById('progress-fill');
+const weekDays = document.querySelectorAll('.week-day');
 
 function saveState() {
   localStorage.setItem('gym_pro_data', JSON.stringify(savedData));
+  localStorage.setItem('gym_week_status', JSON.stringify(weekStatus));
+}
+
+// Trova l'indice del giorno odierno (Lunedì = 0, ..., Domenica = 6)
+function getTodayIndex() {
+  const day = new Date().getDay(); // 0 è Domenica, 1 è Lunedì...
+  return day === 0 ? 6 : day - 1;
+}
+
+function updateWeekUI() {
+  weekDays.forEach((el, index) => {
+    el.classList.remove('active-orange', 'active-green');
+    const status = weekStatus[index];
+    if (status === 'orange') el.classList.add('active-orange');
+    if (status === 'green') el.classList.add('active-green');
+  });
+}
+
+function checkDayCompletion() {
+  const dayData = WORKOUT_PLAN[currentDay];
+  let totalSets = 0;
+  let completedSets = 0;
+
+  dayData.exercises.forEach(ex => {
+    for (let s = 1; s <= ex.sets; s++) {
+      totalSets++;
+      const key = `${ex.id}_s${s}`;
+      if (savedData[key] && savedData[key].done) {
+        completedSets++;
+      }
+    }
+  });
+
+  // Aggiorna la barra di progresso
+  const percent = totalSets > 0 ? (completedSets / totalSets) * 100 : 0;
+  progressFill.style.width = `${percent}%`;
+
+  // Se tutte le serie sono spuntate, il giorno diventa verde nella settimana
+  const todayIdx = getTodayIndex();
+  if (totalSets > 0 && completedSets === totalSets) {
+    weekStatus[todayIdx] = 'green';
+  } else if (weekStatus[todayIdx] === 'green' && completedSets < totalSets) {
+    weekStatus[todayIdx] = 'orange'; // Se togli una spunta torna arancione
+  }
+  saveState();
+  updateWeekUI();
 }
 
 function renderDay(dayKey) {
@@ -62,8 +111,8 @@ function renderDay(dayKey) {
 
   dayData.exercises.forEach((ex, idx) => {
     const card = document.createElement('div');
-    card.className = `exercise-card ${ex.superset ? 'superset-card' : ''}`;
-    card.style.animationDelay = `${idx * 0.06}s`;
+    card.className = `exercise-card`;
+    card.style.animationDelay = `${idx * 0.05}s`;
 
     let setsHTML = '';
     for (let s = 1; s <= ex.sets; s++) {
@@ -78,7 +127,7 @@ function renderDay(dayKey) {
             <span>kg</span>
           </div>
           <div class="input-box">
-            <input type="number" placeholder="${ex.reps.split('+')[0]}" value="${entry.reps}" data-field="reps">
+            <input type="number" placeholder="${ex.reps}" value="${entry.reps}" data-field="reps">
             <span>rep</span>
           </div>
           <button class="check-btn" aria-label="Completa serie">✓</button>
@@ -93,7 +142,6 @@ function renderDay(dayKey) {
           <div class="exercise-meta">
             <span class="badge target">${ex.sets} × ${ex.reps}</span>
             <span class="badge">Rec ${ex.rest}s</span>
-            ${ex.superset ? '<span class="badge superset">⚡ Superserie</span>' : ''}
           </div>
         </div>
       </div>
@@ -104,6 +152,7 @@ function renderDay(dayKey) {
   });
 
   attachRowListeners();
+  checkDayCompletion();
 }
 
 function attachRowListeners() {
@@ -125,13 +174,24 @@ function attachRowListeners() {
       savedData[key].done = !savedData[key].done;
       row.classList.toggle('done', savedData[key].done);
       saveState();
+      checkDayCompletion();
 
       if (savedData[key].done) {
         startRestTimer(restTime);
+        if (navigator.vibrate) navigator.vibrate(50);
       }
     });
   });
 }
+
+// Pulsante "Inizia Allenamento": rende il giorno odierno arancione
+document.getElementById('start-workout').addEventListener('click', () => {
+  const todayIdx = getTodayIndex();
+  weekStatus[todayIdx] = 'orange';
+  saveState();
+  updateWeekUI();
+  if (navigator.vibrate) navigator.vibrate([40, 40, 40]);
+});
 
 function startRestTimer(seconds) {
   clearInterval(timerInterval);
@@ -194,8 +254,6 @@ tabBtns.forEach((btn, index) => {
   });
 });
 
+// Inizializzazione
 renderDay(currentDay);
-
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('./sw.js');
-}
+updateWeekUI();
