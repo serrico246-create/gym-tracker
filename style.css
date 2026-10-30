@@ -19,27 +19,13 @@
 }
 
 body {
-  background: linear-gradient(180deg, #0d0d14 0%, #070709 140px);
-  background-color: var(--bg-dark);
+  background: linear-gradient(180deg, #161426 0%, #070709 220px) no-repeat;
+  background-color: #070709;
   color: var(--text-main);
   min-height: 100vh;
-  padding: calc(20px + env(safe-area-inset-top)) 16px 110px;
+  padding: 20px 16px 110px;
   overflow-x: hidden;
   user-select: none;
-}
-
-/* Bagliore sfumato di sfondo */
-.bg-glow {
-  position: fixed;
-  top: -120px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 380px;
-  height: 320px;
-  background: radial-gradient(circle, rgba(99, 102, 241, 0.22) 0%, rgba(168, 85, 247, 0.08) 50%, transparent 70%);
-  filter: blur(45px);
-  z-index: -1;
-  pointer-events: none;
 }
 
 .app-container {
