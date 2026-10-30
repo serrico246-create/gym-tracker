@@ -2,7 +2,7 @@ const WORKOUT_PLAN = {
   day1: {
     title: "Giorno 1 · Petto - Bicipiti - Polpacci",
     exercises: [
-      { id: "d1_e1", name: "Chest Press", sets: 4, reps: "8-10", rest: 60 },
+      { id: "d1_e1", name: "Chest Press", sets: 4, reps: "10", rest: 60 },
       { id: "d1_e2", name: "Croci pec fly", sets: 4, reps: "10", rest: 60 },
       { id: "d1_e3", name: "Chest Press Inclinata", sets: 4, reps: "10-12", rest: 60 },
       { id: "d1_e4", name: "Curl Con Manubri", sets: 4, reps: "10-12", rest: 60 },
@@ -14,23 +14,23 @@ const WORKOUT_PLAN = {
   day2: {
     title: "Giorno 2 · Dorso - Tricipiti - Quadricipiti",
     exercises: [
-      { id: "d2_e1", name: "Lat Machine", sets: 4, reps: "8-10", rest: 60 },
-      { id: "d2_e2", name: "Pulley Basso", sets: 4, reps: "12-15", rest: 60 },
+      { id: "d2_e1", name: "Lat Machine", sets: 4, reps: "10", rest: 60 },
+      { id: "d2_e2", name: "Pulley Basso", sets: 4, reps: "10", rest: 60 },
       { id: "d2_e3", name: "Hig Row", sets: 4, reps: "10", rest: 60 },
-      { id: "d2_e4", name: "Dip", sets: 4, reps: "10-12", rest: 60 },
-      { id: "d1_e5", name: "French Press (EZ Bar)", sets: 4, reps: "10-12", rest: 60 },
-      { id: "d1_e6", name: "PushDown Tricipiti", sets: 4, reps: "10-12", rest: 60 },
-      { id: "d1_e7", name: "Leg Extension (a una gamba)", sets: 4, reps: "10-12", rest: 60 },
+      { id: "d2_e4", name: "Dip", sets: 4, reps: "10", rest: 60 },
+      { id: "d1_e5", name: "French Press (EZ Bar)", sets: 4, reps: "10", rest: 60 },
+      { id: "d1_e6", name: "PushDown Tricipiti", sets: 4, reps: "10", rest: 60 },
+      { id: "d1_e7", name: "Leg Extension (a una gamba)", sets: 4, reps: "10", rest: 60 },
     ]
   },
   day3: {
     title: "Giorno 3 · Spalle - Gambe",
     exercises: [
       { id: "d3_e1", name: "Arnold Press", sets: 4, reps: "10", rest: 60 },
-      { id: "d3_e2", name: "Alzate Alternate", sets: 4, reps: "10-12", rest: 60 },
+      { id: "d3_e2", name: "Alzate Alternate", sets: 4, reps: "10", rest: 60 },
       { id: "d3_e3", name: "Alzate ai cavi", sets: 3, reps: "12", rest: 60 },
-      { id: "d3_e4", name: "Leg Press", sets: 4, reps: "15", rest: 60 },
-      { id: "d3_e5", name: "Squat", sets: 4, reps: "15", rest: 60 },
+      { id: "d3_e4", name: "Leg Press", sets: 4, reps: "10", rest: 60 },
+      { id: "d3_e5", name: "Squat", sets: 4, reps: "10", rest: 60 },
     ]
   },
   day4: {
