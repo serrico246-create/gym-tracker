@@ -330,6 +330,11 @@ document.getElementById('start-workout').addEventListener('click', () => {
   weekStatus[todayIdx] = 'orange';
   saveState();
   updateWeekUI();
+  
+  // Anima e nasconde il tasto con stile
+  const startBtn = document.getElementById('start-workout');
+  startBtn.classList.add('fade-out');
+
   if (navigator.vibrate) navigator.vibrate([40, 40, 40]);
 });
 
