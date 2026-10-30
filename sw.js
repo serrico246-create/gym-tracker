@@ -1,14 +1,14 @@
-const CACHE_NAME = 'gym-v1';
+const CACHE_NAME = 'gym-v3';
 const ASSETS = [
   './',
   './index.html',
   './style.css',
   './app.js',
-  './manifest.json',
-  './icon.png'
+  './manifest.json'
 ];
 
 self.addEventListener('install', (e) => {
+  self.skipWaiting();
   e.waitUntil(
     caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
   );
