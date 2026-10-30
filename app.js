@@ -1,38 +1,42 @@
 const WORKOUT_PLAN = {
   day1: {
-    title: "Giorno 1 · Petto & Dorso",
+    title: "Giorno 1 · Petto - Bicipiti - Polpacci",
     exercises: [
-      { id: "d1_e1", name: "Spinte Manubri Panca Piana", sets: 4, reps: "8-10", rest: 120 },
-      { id: "d1_e2", name: "Lat Machine Presa Prona", sets: 4, reps: "10", rest: 90 },
-      { id: "d1_e3", name: "Panca Inclinata Manubri", sets: 3, reps: "10-12", rest: 90 },
-      { id: "d1_e4", name: "Pulley Basso", sets: 3, reps: "10+12", rest: 90 }
+      { id: "d1_e1", name: "Chest Press", sets: 4, reps: "10", rest: 60 },
+      { id: "d1_e2", name: "Pec Fly", sets: 4, reps: "10", rest: 60 },
+      { id: "d1_e3", name: "Chest Press Inclinata", sets: 4, reps: "10", rest: 60 },
+      { id: "d1_e4", name: "Curl con Manubri", sets: 4, reps: "10", rest: 60 },
+      { id: "d1_e5", name: "Curl ai Cavi (un braccio)", sets: 4, reps: "10", rest: 60 },
+      { id: "d1_e6", name: "Curl a Martello", sets: 4, reps: "10", rest: 60 },
+      { id: "d1_e7", name: "Calf Raise in Piedi", sets: 4, reps: "10", rest: 60 }
     ]
   },
   day2: {
-    title: "Giorno 2 · Spalle & Braccia",
+    title: "Giorno 2 · Dorso - Tricipite - Quadricipite",
     exercises: [
-      { id: "d2_e1", name: "Lento Avanti Manubri", sets: 4, reps: "8-10", rest: 120 },
-      { id: "d2_e2", name: "Alzate Laterali ai Cavi", sets: 4, reps: "12-15", rest: 60 },
-      { id: "d2_e3", name: "Curl Manubri Panca 60°", sets: 4, reps: "10", rest: 75 },
-      { id: "d2_e4", name: "Pushdown Tricipiti", sets: 3, reps: "12", rest: 75 }
+      { id: "d2_e1", name: "Lat Machine", sets: 4, reps: "10", rest: 60 },
+      { id: "d2_e2", name: "Pulley Basso", sets: 4, reps: "10", rest: 60 },
+      { id: "d2_e3", name: "Hig Row", sets: 4, reps: "10", rest: 60 },
+      { id: "d2_e4", name: "Dips", sets: 4, reps: "10", rest: 60 },
+      { id: "d2_e5", name: "French Press", sets: 4, reps: "10", rest: 60 },
+      { id: "d2_e6", name: "Pushdown", sets: 4, reps: "10", rest: 60 },
+      { id: "d2_e7", name: "Lex Extension", sets: 4, reps: "10", rest: 60 }
     ]
   },
   day3: {
-    title: "Giorno 3 · Gambe & Core",
+    title: "Giorno 3 · Spalle - Gambe",
     exercises: [
-      { id: "d3_e1", name: "Leg Press 45°", sets: 4, reps: "10", rest: 120 },
-      { id: "d3_e2", name: "Stacco Rumeno Manubri", sets: 4, reps: "10-12", rest: 90 },
-      { id: "d3_e3", name: "Leg Extension", sets: 3, reps: "12", rest: 75 },
-      { id: "d3_e4", name: "Calf Press", sets: 4, reps: "15", rest: 60 }
+      { id: "d3_e1", name: "Arnold Press", sets: 4, reps: "10", rest: 60 },
+      { id: "d3_e2", name: "Alzate Alternate", sets: 4, reps: "10", rest: 60 },
+      { id: "d3_e3", name: "Alzate ai Cavi", sets: 4, reps: "10", rest: 60 },
+      { id: "d3_e4", name: "Leg Press", sets: 4, reps: "10", rest: 60 },
+      { id: "d2_e5", name: "Squat", sets: 4, reps: "10", rest: 60 }
     ]
   },
   day4: {
-    title: "Giorno 4 · Richiamo Upper & Core",
+    title: "Giorno 4 · Richiamo",
     exercises: [
-      { id: "d4_e1", name: "Chest Press Convergente", sets: 3, reps: "10-12", rest: 90 },
-      { id: "d4_e2", name: "Rematore con Manubrio", sets: 3, reps: "10", rest: 90 },
-      { id: "d4_e3", name: "Face Pull", sets: 3, reps: "15", rest: 60 },
-      { id: "d4_e4", name: "Plank", sets: 3, reps: "Max", rest: 60 }
+      { id: "d4_e1", name: "Richiamo" }
     ]
   }
 };
