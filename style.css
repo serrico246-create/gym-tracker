@@ -19,10 +19,11 @@
 }
 
 body {
-  background: #070709;
+  background: linear-gradient(180deg, #161426 0%, #070709 220px) no-repeat;
+  background-color: #070709;
   color: var(--text-main);
   min-height: 100vh;
-  padding: 20px calc(16px + env(safe-area-inset-right)) 110px calc(16px + env(safe-area-inset-left));
+  padding: 20px 16px 110px;
   overflow-x: hidden;
   user-select: none;
 }
