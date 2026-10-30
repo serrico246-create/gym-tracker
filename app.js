@@ -1,51 +1,49 @@
 const WORKOUT_PLAN = {
   day1: {
-    title: "Giorno 1 · Petto - Bicipiti - Polpacci",
+    title: "Giorno 1 · Petto & Dorso",
     exercises: [
-      { id: "d1_e1", name: "Chest Press", sets: 4, reps: "10", rest: 60 },
-      { id: "d1_e2", name: "Croci pec fly", sets: 4, reps: "10", rest: 60 },
-      { id: "d1_e3", name: "Chest Press Inclinata", sets: 4, reps: "10-12", rest: 60 },
-      { id: "d1_e4", name: "Curl Con Manubri", sets: 4, reps: "10-12", rest: 60 },
-      { id: "d1_e5", name: "Curl Cavo (a un braccio)", sets: 4, reps: "10-12", rest: 60 },
-      { id: "d1_e6", name: "Curl a Martello", sets: 4, reps: "10-12", rest: 60 },
-      { id: "d1_e7", name: "Calf Raise (in piedi)", sets: 4, reps: "10-12", rest: 60 }
+      { id: "d1_e1", name: "Spinte Manubri Panca Piana", sets: 4, reps: "8-10", rest: 120 },
+      { id: "d1_e2", name: "Lat Machine Presa Prona", sets: 4, reps: "10", rest: 90 },
+      { id: "d1_e3", name: "Panca Inclinata Manubri", sets: 3, reps: "10-12", rest: 90 },
+      { id: "d1_e4", name: "Pulley Basso", sets: 3, reps: "10+12", rest: 90 }
     ]
   },
   day2: {
-    title: "Giorno 2 · Dorso - Tricipiti - Quadricipiti",
+    title: "Giorno 2 · Spalle & Braccia",
     exercises: [
-      { id: "d2_e1", name: "Lat Machine", sets: 4, reps: "10", rest: 60 },
-      { id: "d2_e2", name: "Pulley Basso", sets: 4, reps: "10", rest: 60 },
-      { id: "d2_e3", name: "Hig Row", sets: 4, reps: "10", rest: 60 },
-      { id: "d2_e4", name: "Dip", sets: 4, reps: "10", rest: 60 },
-      { id: "d1_e5", name: "French Press (EZ Bar)", sets: 4, reps: "10", rest: 60 },
-      { id: "d1_e6", name: "PushDown Tricipiti", sets: 4, reps: "10", rest: 60 },
-      { id: "d1_e7", name: "Leg Extension (a una gamba)", sets: 4, reps: "10", rest: 60 },
+      { id: "d2_e1", name: "Lento Avanti Manubri", sets: 4, reps: "8-10", rest: 120 },
+      { id: "d2_e2", name: "Alzate Laterali ai Cavi", sets: 4, reps: "12-15", rest: 60 },
+      { id: "d2_e3", name: "Curl Manubri Panca 60°", sets: 4, reps: "10", rest: 75 },
+      { id: "d2_e4", name: "Pushdown Tricipiti", sets: 3, reps: "12", rest: 75 }
     ]
   },
   day3: {
-    title: "Giorno 3 · Spalle - Gambe",
+    title: "Giorno 3 · Gambe & Core",
     exercises: [
-      { id: "d3_e1", name: "Arnold Press", sets: 4, reps: "10", rest: 60 },
-      { id: "d3_e2", name: "Alzate Alternate", sets: 4, reps: "10", rest: 60 },
-      { id: "d3_e3", name: "Alzate ai cavi", sets: 3, reps: "12", rest: 60 },
-      { id: "d3_e4", name: "Leg Press", sets: 4, reps: "10", rest: 60 },
-      { id: "d3_e5", name: "Squat", sets: 4, reps: "10", rest: 60 },
+      { id: "d3_e1", name: "Leg Press 45°", sets: 4, reps: "10", rest: 120 },
+      { id: "d3_e2", name: "Stacco Rumeno Manubri", sets: 4, reps: "10-12", rest: 90 },
+      { id: "d3_e3", name: "Leg Extension", sets: 3, reps: "12", rest: 75 },
+      { id: "d3_e4", name: "Calf Press", sets: 4, reps: "15", rest: 60 }
     ]
   },
   day4: {
-    title: "Giorno 4 · Bonus",
+    title: "Giorno 4 · Richiamo Upper & Core",
     exercises: [
-      { id: "d4_e1", name: "Richiamo generale", sets: 0, reps: "0", rest: 0 }
+      { id: "d4_e1", name: "Chest Press Convergente", sets: 3, reps: "10-12", rest: 90 },
+      { id: "d4_e2", name: "Rematore con Manubrio", sets: 3, reps: "10", rest: 90 },
+      { id: "d4_e3", name: "Face Pull", sets: 3, reps: "15", rest: 60 },
+      { id: "d4_e4", name: "Plank", sets: 3, reps: "Max", rest: 60 }
     ]
   }
 };
 
 let currentDay = localStorage.getItem('active_day') || 'day1';
-let savedData = JSON.parse(localStorage.getItem('gym_pro_data')) || {};
-let weekStatus = JSON.parse(localStorage.getItem('gym_week_status')) || {}; // { 0: 'orange', 1: 'green', ... }
+let workoutHistory = JSON.parse(localStorage.getItem('gym_workout_history')) || {}; 
+let weekStatus = JSON.parse(localStorage.getItem('gym_week_status')) || {};
 let timerInterval = null;
 let remainingSeconds = 0;
+
+let currentDate = new Date(); // Per la visualizzazione del calendario
 
 const dayTitleEl = document.getElementById('day-title');
 const exercisesListEl = document.getElementById('exercises-list');
@@ -56,14 +54,26 @@ const timerDisplay = document.getElementById('timer-display');
 const progressFill = document.getElementById('progress-fill');
 const weekDays = document.querySelectorAll('.week-day');
 
+function getTodayKey() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function getSavedDataForToday() {
+  const todayKey = getTodayKey();
+  if (!workoutHistory[todayKey]) {
+    workoutHistory[todayKey] = { dayType: currentDay, sets: {} };
+  }
+  return workoutHistory[todayKey].sets;
+}
+
 function saveState() {
-  localStorage.setItem('gym_pro_data', JSON.stringify(savedData));
+  localStorage.setItem('gym_workout_history', JSON.stringify(workoutHistory));
   localStorage.setItem('gym_week_status', JSON.stringify(weekStatus));
 }
 
-// Trova l'indice del giorno odierno (Lunedì = 0, ..., Domenica = 6)
 function getTodayIndex() {
-  const day = new Date().getDay(); // 0 è Domenica, 1 è Lunedì...
+  const day = new Date().getDay();
   return day === 0 ? 6 : day - 1;
 }
 
@@ -78,6 +88,7 @@ function updateWeekUI() {
 
 function checkDayCompletion() {
   const dayData = WORKOUT_PLAN[currentDay];
+  const currentSavedSets = getSavedDataForToday();
   let totalSets = 0;
   let completedSets = 0;
 
@@ -85,22 +96,20 @@ function checkDayCompletion() {
     for (let s = 1; s <= ex.sets; s++) {
       totalSets++;
       const key = `${ex.id}_s${s}`;
-      if (savedData[key] && savedData[key].done) {
+      if (currentSavedSets[key] && currentSavedSets[key].done) {
         completedSets++;
       }
     }
   });
 
-  // Aggiorna la barra di progresso
   const percent = totalSets > 0 ? (completedSets / totalSets) * 100 : 0;
   progressFill.style.width = `${percent}%`;
 
-  // Se tutte le serie sono spuntate, il giorno diventa verde nella settimana
   const todayIdx = getTodayIndex();
   if (totalSets > 0 && completedSets === totalSets) {
     weekStatus[todayIdx] = 'green';
   } else if (weekStatus[todayIdx] === 'green' && completedSets < totalSets) {
-    weekStatus[todayIdx] = 'orange'; // Se togli una spunta torna arancione
+    weekStatus[todayIdx] = 'orange';
   }
   saveState();
   updateWeekUI();
@@ -113,6 +122,9 @@ function renderDay(dayKey) {
   dayTitleEl.textContent = dayData.title;
   exercisesListEl.innerHTML = '';
 
+  const currentSavedSets = getSavedDataForToday();
+  workoutHistory[getTodayKey()].dayType = dayKey;
+
   dayData.exercises.forEach((ex, idx) => {
     const card = document.createElement('div');
     card.className = `exercise-card`;
@@ -121,7 +133,7 @@ function renderDay(dayKey) {
     let setsHTML = '';
     for (let s = 1; s <= ex.sets; s++) {
       const key = `${ex.id}_s${s}`;
-      const entry = savedData[key] || { weight: '', reps: '', done: false };
+      const entry = currentSavedSets[key] || { weight: '', reps: '', done: false };
 
       setsHTML += `
         <div class="set-row ${entry.done ? 'done' : ''}" data-key="${key}" data-rest="${ex.rest}">
@@ -141,12 +153,10 @@ function renderDay(dayKey) {
 
     card.innerHTML = `
       <div class="card-header">
-        <div>
-          <div class="exercise-title">${ex.name}</div>
-          <div class="exercise-meta">
-            <span class="badge target">${ex.sets} × ${ex.reps}</span>
-            <span class="badge">Rec ${ex.rest}s</span>
-          </div>
+        <div class="exercise-title">${ex.name}</div>
+        <div class="exercise-meta">
+          <span class="badge target">${ex.sets} × ${ex.reps}</span>
+          <span class="badge">Rec ${ex.rest}s</span>
         </div>
       </div>
       <div class="sets-list">${setsHTML}</div>
@@ -163,24 +173,25 @@ function attachRowListeners() {
   document.querySelectorAll('.set-row').forEach(row => {
     const key = row.dataset.key;
     const restTime = parseInt(row.dataset.rest, 10);
+    const currentSavedSets = getSavedDataForToday();
 
     row.querySelectorAll('input').forEach(input => {
       input.addEventListener('input', () => {
-        if (!savedData[key]) savedData[key] = { weight: '', reps: '', done: false };
-        savedData[key][input.dataset.field] = input.value;
+        if (!currentSavedSets[key]) currentSavedSets[key] = { weight: '', reps: '', done: false };
+        currentSavedSets[key][input.dataset.field] = input.value;
         saveState();
       });
     });
 
     const checkBtn = row.querySelector('.check-btn');
     checkBtn.addEventListener('click', () => {
-      if (!savedData[key]) savedData[key] = { weight: '', reps: '', done: false };
-      savedData[key].done = !savedData[key].done;
-      row.classList.toggle('done', savedData[key].done);
+      if (!currentSavedSets[key]) currentSavedSets[key] = { weight: '', reps: '', done: false };
+      currentSavedSets[key].done = !currentSavedSets[key].done;
+      row.classList.toggle('done', currentSavedSets[key].done);
       saveState();
       checkDayCompletion();
 
-      if (savedData[key].done) {
+      if (currentSavedSets[key].done) {
         startRestTimer(restTime);
         if (navigator.vibrate) navigator.vibrate(50);
       }
@@ -188,7 +199,132 @@ function attachRowListeners() {
   });
 }
 
-// Pulsante "Inizia Allenamento": rende il giorno odierno arancione
+// Navigazione tra viste (Allenamento / Calendario)
+document.querySelectorAll('.nav-view-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.nav-view-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+
+    const view = btn.dataset.view;
+    document.getElementById('view-workout').classList.toggle('hidden', view !== 'workout');
+    document.getElementById('view-calendar').classList.toggle('hidden', view !== 'calendar');
+
+    if (view === 'calendar') {
+      renderCalendar();
+    }
+  });
+});
+
+// Generazione Calendario Mensile
+function renderCalendar() {
+  const grid = document.getElementById('calendar-grid');
+  const monthTitle = document.getElementById('calendar-month-title');
+  grid.innerHTML = '';
+
+  const year = currentDate.getFullYear();
+  const month = currentDate.getMonth();
+
+  const options = { month: 'long', year: 'numeric' };
+  monthTitle.textContent = currentDate.toLocaleDateString('it-IT', options);
+
+  const firstDayIndex = new Date(year, month, 1).getDay();
+  const startDay = firstDayIndex === 0 ? 6 : firstDayIndex - 1; // Lunedì come inizio
+  const totalDays = new Date(year, month + 1, 0).getDate();
+
+  // Spazi vuoti prima del primo giorno del mese
+  for (let i = 0; i < startDay; i++) {
+    const empty = document.createElement('div');
+    empty.className = 'cal-day empty';
+    grid.appendChild(empty);
+  }
+
+  // Giorni del mese
+  for (let day = 1; day <= totalDays; day++) {
+    const dayCell = document.createElement('div');
+    dayCell.className = 'cal-day';
+    dayCell.textContent = day;
+
+    const formattedMonth = String(month + 1).padStart(2, '0');
+    const formattedDay = String(day).padStart(2, '0');
+    const dateKey = `${year}-${formattedMonth}-${formattedDay}`;
+
+    // Controlla se in quella data c'è un allenamento salvato e completato
+    const dayRecord = workoutHistory[dateKey];
+    let isCompleted = false;
+    if (dayRecord && dayRecord.sets) {
+      const setsArr = Object.values(dayRecord.sets);
+      if (setsArr.length > 0 && setsArr.every(s => s.done)) {
+        isCompleted = true;
+      }
+    }
+
+    if (isCompleted) {
+      dayCell.classList.add('completed');
+    }
+
+    const dNow = new Date();
+    if (year === dNow.getFullYear() && month === dNow.getMonth() && day === dNow.getDate()) {
+      dayCell.classList.add('today');
+    }
+
+    dayCell.addEventListener('click', () => {
+      showDayDetail(dateKey);
+    });
+
+    grid.appendChild(dayCell);
+  }
+}
+
+function showDayDetail(dateKey) {
+  const detailContainer = document.getElementById('calendar-detail');
+  const record = workoutHistory[dateKey];
+
+  if (!record || !record.sets || Object.keys(record.sets).length === 0) {
+    detailContainer.innerHTML = `
+      <h3>Data: ${dateKey}</h3>
+      <p class="cal-placeholder">Nessun allenamento registrato in questa data.</p>
+    `;
+    return;
+  }
+
+  const planName = WORKOUT_PLAN[record.dayType] ? WORKOUT_PLAN[record.dayType].title : "Allenamento";
+  let html = `<h3>${dateKey} · ${planName}</h3><div style="display:flex; flex-direction:column; gap:6px; margin-top:10px;">`;
+
+  let lastExId = "";
+  for (const [key, val] of Object.entries(record.sets)) {
+    if (!val.weight && !val.reps) continue;
+    const exId = key.split('_s')[0];
+    const setNum = key.split('_s')[1];
+
+    // Trova il nome dell'esercizio
+    let exName = exId;
+    for (const dKey in WORKOUT_PLAN) {
+      const found = WORKOUT_PLAN[dKey].exercises.find(e => e.id === exId);
+      if (found) { exName = found.name; break; }
+    }
+
+    html += `
+      <div class="history-item">
+        <span><strong>${exName}</strong> (Serie #${setNum})</span>
+        <span style="color:var(--success); font-weight:600;">${val.weight || 0} kg × ${val.reps || 0} rep</span>
+      </div>
+    `;
+  }
+
+  html += `</div>`;
+  detailContainer.innerHTML = html;
+}
+
+document.getElementById('prev-month').addEventListener('click', () => {
+  currentDate.setMonth(currentDate.getMonth() - 1);
+  renderCalendar();
+});
+
+document.getElementById('next-month').addEventListener('click', () => {
+  currentDate.setMonth(currentDate.getMonth() + 1);
+  renderCalendar();
+});
+
 document.getElementById('start-workout').addEventListener('click', () => {
   const todayIdx = getTodayIndex();
   weekStatus[todayIdx] = 'orange';
@@ -232,13 +368,8 @@ document.getElementById('timer-skip').addEventListener('click', () => {
 });
 
 document.getElementById('reset-day').addEventListener('click', () => {
-  const dayData = WORKOUT_PLAN[currentDay];
-  dayData.exercises.forEach(ex => {
-    for (let s = 1; s <= ex.sets; s++) {
-      const key = `${ex.id}_s${s}`;
-      if (savedData[key]) savedData[key].done = false;
-    }
-  });
+  const currentSavedSets = getSavedDataForToday();
+  Object.keys(currentSavedSets).forEach(k => currentSavedSets[k].done = false);
   saveState();
   renderDay(currentDay);
 });
