@@ -52,9 +52,14 @@ let workoutStartTime = localStorage.getItem('gym_current_start_time')
   : null;
 
 let currentDate = new Date();
+let selectedWeekIndex = getTodayIndex();
 
 const dayTitleEl = document.getElementById('day-title');
+const subtitleEl = document.querySelector('.subtitle');
 const exercisesListEl = document.getElementById('exercises-list');
+const dayTabsEl = document.getElementById('day-tabs');
+const progressContainerEl = document.querySelector('.progress-container');
+const footerActionsEl = document.querySelector('.workout-footer-actions');
 const tabBtns = document.querySelectorAll('.tab-btn');
 const tabIndicator = document.getElementById('tab-indicator');
 const timerBar = document.getElementById('rest-timer');
@@ -63,14 +68,34 @@ const progressFill = document.getElementById('progress-fill');
 const weekDays = document.querySelectorAll('.week-day');
 const startBtn = document.getElementById('start-workout');
 
-function getTodayKey() {
-  const d = new Date();
+function formatDateKey(d) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function getTodayKey() {
+  return formatDateKey(new Date());
 }
 
 function getTodayIndex() {
   const day = new Date().getDay();
   return day === 0 ? 6 : day - 1;
+}
+
+// Restituisce la data YYYY-MM-DD corrispondente a uno dei 7 bollini (0 = Lunedì, 6 = Domenica)
+function getDateKeyForWeekIndex(targetIdx) {
+  const now = new Date();
+  const todayIdx = getTodayIndex();
+  const diff = targetIdx - todayIdx;
+  const targetDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + diff);
+  return formatDateKey(targetDate);
+}
+
+function isDateSaved(dateKey) {
+  const rec = workoutHistory[dateKey];
+  if (!rec) return false;
+  const setsArr = rec.sets ? Object.values(rec.sets) : [];
+  const allDone = setsArr.length > 0 && setsArr.every(s => s.done);
+  return Boolean(rec.saved || allDone);
 }
 
 function ensureTodayRecord() {
@@ -92,20 +117,162 @@ function saveState() {
 }
 
 function updateWeekUI() {
+  const todayIdx = getTodayIndex();
+
   weekDays.forEach((el, index) => {
-    el.classList.remove('active-orange', 'active-green');
+    el.classList.remove('active-orange', 'active-green', 'selected-day');
+
+    const dateKey = getDateKeyForWeekIndex(index);
     const status = weekStatus[index];
-    if (status === 'orange') el.classList.add('active-orange');
-    if (status === 'green') el.classList.add('active-green');
+
+    if (isDateSaved(dateKey) || status === 'green') {
+      el.classList.add('active-green');
+    } else if (status === 'orange') {
+      el.classList.add('active-orange');
+    }
+
+    if (index === selectedWeekIndex) {
+      el.classList.add('selected-day');
+    }
   });
 
-  const todayIdx = getTodayIndex();
-  if (weekStatus[todayIdx] === 'orange' || weekStatus[todayIdx] === 'green') {
+  if (selectedWeekIndex !== todayIdx) {
+    startBtn.classList.add('fade-out');
+  } else if (weekStatus[todayIdx] === 'orange' || weekStatus[todayIdx] === 'green') {
     startBtn.classList.add('fade-out');
   } else {
     startBtn.classList.remove('fade-out');
   }
 }
+
+function setTodayInteractiveMode(isInteractive) {
+  if (dayTabsEl) dayTabsEl.classList.toggle('hidden', !isInteractive);
+  if (progressContainerEl) progressContainerEl.classList.toggle('hidden', !isInteractive);
+  if (footerActionsEl) footerActionsEl.classList.toggle('hidden', !isInteractive);
+}
+
+// Mostra il riepilogo quando si preme su un altro bollino della settimana
+function renderWeekDaySummary(weekIndex) {
+  selectedWeekIndex = weekIndex;
+  const todayIdx = getTodayIndex();
+
+  if (weekIndex === todayIdx) {
+    setTodayInteractiveMode(true);
+    if (subtitleEl) subtitleEl.textContent = 'SCHEDA ATTIVA';
+    renderDay(currentDay);
+    updateWeekUI();
+    return;
+  }
+
+  setTodayInteractiveMode(false);
+  updateWeekUI();
+
+  const dateKey = getDateKeyForWeekIndex(weekIndex);
+  const record = workoutHistory[dateKey];
+  const dayNames = ['Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato', 'Domenica'];
+
+  if (!isDateSaved(dateKey)) {
+    if (subtitleEl) subtitleEl.textContent = `${dayNames[weekIndex].toUpperCase()} · ${dateKey}`;
+    dayTitleEl.textContent = dayNames[weekIndex];
+    exercisesListEl.innerHTML = `
+      <div class="empty-day-message">
+        Nessun allenamento registrato.
+        <div>
+          <button class="btn-back-today" id="back-to-today-btn">Torna a oggi</button>
+        </div>
+      </div>
+    `;
+    document.getElementById('back-to-today-btn').addEventListener('click', () => {
+      renderWeekDaySummary(todayIdx);
+    });
+    return;
+  }
+
+  const dayKey = record.dayType || 'day1';
+  const dayData = WORKOUT_PLAN[dayKey];
+  let durationText = '';
+  if (record.durationSeconds && record.durationSeconds > 0) {
+    durationText = ` · ⏱️ ${Math.max(1, Math.round(record.durationSeconds / 60))} min`;
+  }
+
+  if (subtitleEl) subtitleEl.textContent = `RIEPILOGO ${dayNames[weekIndex].toUpperCase()} (${dateKey})${durationText}`;
+  dayTitleEl.textContent = dayData ? dayData.title : 'Allenamento';
+  exercisesListEl.innerHTML = '';
+
+  if (dayData && dayData.exercises) {
+    dayData.exercises.forEach((ex, idx) => {
+      const card = document.createElement('div');
+      card.className = 'exercise-card';
+      card.style.animationDelay = `${idx * 0.05}s`;
+
+      if (ex.simpleCheck) {
+        card.innerHTML = `
+          <div class="card-header" style="margin-bottom: 10px;">
+            <div class="exercise-title">${ex.name}</div>
+          </div>
+          <div class="sets-list">
+            <div class="set-row simple-check-row done">
+              <span class="simple-check-label">Allenamento completato</span>
+              <button class="check-btn" disabled>✓</button>
+            </div>
+          </div>
+        `;
+        exercisesListEl.appendChild(card);
+        return;
+      }
+
+      const numSets = ex.sets || 4;
+      const targetReps = ex.reps || '10';
+      let setsHTML = '';
+
+      for (let s = 1; s <= numSets; s++) {
+        const key = `${ex.id}_s${s}`;
+        const entry = (record.sets && record.sets[key]) ? record.sets[key] : { weight: '', reps: '', done: false };
+        const w = entry.weight !== '' && entry.weight !== undefined ? entry.weight : 0;
+        const r = entry.reps !== '' && entry.reps !== undefined ? entry.reps : 0;
+        const isDone = entry.done || entry.weight !== '' || entry.reps !== '';
+
+        setsHTML += `
+          <div class="set-row readonly-row ${isDone ? 'done' : ''}">
+            <span class="set-num">#${s}</span>
+            <span class="readonly-values">${isDone ? `${w} kg × ${r} rep` : 'Serie non svolta'}</span>
+            <button class="check-btn" disabled>${isDone ? '✓' : '–'}</button>
+          </div>
+        `;
+      }
+
+      card.innerHTML = `
+        <div class="card-header">
+          <div class="exercise-title">${ex.name}</div>
+          <div class="exercise-meta">
+            <span class="badge target">${numSets} × ${targetReps}</span>
+          </div>
+        </div>
+        <div class="sets-list">${setsHTML}</div>
+      `;
+
+      exercisesListEl.appendChild(card);
+    });
+  }
+
+  const backWrapper = document.createElement('div');
+  backWrapper.style.textAlign = 'center';
+  backWrapper.style.marginTop = '8px';
+  backWrapper.innerHTML = `<button class="btn-back-today" id="back-to-today-btn">Torna all'allenamento di oggi</button>`;
+  exercisesListEl.appendChild(backWrapper);
+
+  document.getElementById('back-to-today-btn').addEventListener('click', () => {
+    renderWeekDaySummary(todayIdx);
+  });
+}
+
+// Click sui 7 bollini della settimana
+weekDays.forEach((el, index) => {
+  el.addEventListener('click', () => {
+    if (navigator.vibrate) navigator.vibrate(25);
+    renderWeekDaySummary(index);
+  });
+});
 
 function updateProgressAndAutoCheck() {
   const dayData = WORKOUT_PLAN[currentDay];
@@ -172,7 +339,6 @@ function renderDay(dayKey) {
     card.className = 'exercise-card';
     card.style.animationDelay = `${idx * 0.05}s`;
 
-    // Caso Giorno 4: Casella singola cliccabile senza kg e rep
     if (ex.simpleCheck) {
       const key = `${ex.id}_s1`;
       const entry = currentSavedSets[key] || { done: false };
@@ -192,7 +358,6 @@ function renderDay(dayKey) {
       return;
     }
 
-    // Caso normale (Giorni 1, 2, 3)
     const numSets = ex.sets || 4;
     const targetReps = ex.reps || "10";
     let setsHTML = '';
@@ -407,18 +572,7 @@ function renderCalendar() {
     const formattedDay = String(day).padStart(2, '0');
     const dateKey = `${year}-${formattedMonth}-${formattedDay}`;
 
-    const dayRecord = workoutHistory[dateKey];
-    let isSavedWorkout = false;
-
-    if (dayRecord) {
-      const setsArr = dayRecord.sets ? Object.values(dayRecord.sets) : [];
-      const allDone = setsArr.length > 0 && setsArr.every(s => s.done);
-      if (dayRecord.saved || allDone) {
-        isSavedWorkout = true;
-      }
-    }
-
-    if (isSavedWorkout) {
+    if (isDateSaved(dateKey)) {
       dayCell.classList.add('completed');
     }
 
@@ -441,14 +595,14 @@ function showDayDetail(dateKey) {
   const detailContainer = document.getElementById('calendar-detail');
   const record = workoutHistory[dateKey];
 
-  if (!record || (!record.saved && (!record.sets || Object.keys(record.sets).length === 0))) {
+  if (!isDateSaved(dateKey)) {
     detailContainer.innerHTML = `
       <div class="cal-detail-header">
         <div>
           <div class="cal-detail-title">Data: ${dateKey}</div>
         </div>
       </div>
-      <p class="cal-placeholder">Nessun allenamento salvato in questa data.</p>
+      <p class="cal-placeholder" style="text-align:center; padding: 24px 0;">Nessun allenamento registrato.</p>
     `;
     return;
   }
@@ -619,6 +773,15 @@ tabBtns.forEach((btn, index) => {
     renderDay(btn.dataset.day);
   });
 });
+
+const dateLabelEl = document.getElementById('today-date-label');
+if (dateLabelEl) {
+  dateLabelEl.textContent = new Date().toLocaleDateString('it-IT', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short'
+  });
+}
 
 renderDay(currentDay);
 updateWeekUI();
