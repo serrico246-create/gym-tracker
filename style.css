@@ -472,6 +472,55 @@ body {
   z-index: 100;
   transition: all 0.3s ease;
 }
+
+.cal-workout-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.cal-duration-badge {
+  background: rgba(168, 85, 247, 0.15);
+  color: #d8b4fe;
+  border: 1px solid rgba(168, 85, 247, 0.3);
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.history-exercise-group {
+  margin-bottom: 10px;
+}
+
+.history-exercise-name {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent-2);
+  margin-bottom: 4px;
+}
+
+.history-sets-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.history-set-chip {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 4px 8px;
+  border-radius: 8px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.history-set-chip strong {
+  color: var(--success);
+}
 .timer-bar.hidden { transform: translate(-50%, 140%); opacity: 0; pointer-events: none; }
 .timer-info { display: flex; align-items: center; gap: 10px; font-size: 14px; }
 .timer-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent-2); box-shadow: 0 0 10px var(--accent-2); }
