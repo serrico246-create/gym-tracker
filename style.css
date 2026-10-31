@@ -668,3 +668,15 @@ body {
   border-color: rgba(239, 68, 68, 0.35);
   color: #fca5a5;
 }
+
+/* Riga singola per Richiamo Generale (Giorno 4) */
+.set-row.simple-check-row {
+  grid-template-columns: 1fr 40px;
+  padding: 12px 14px;
+}
+
+.simple-check-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-main);
+}
