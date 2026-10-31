@@ -680,3 +680,61 @@ body {
   font-weight: 600;
   color: var(--text-main);
 }
+
+/* Bollini settimana interattivi e stato selezionato */
+.week-day {
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 12px;
+  transition: background 0.2s ease, transform 0.15s ease;
+}
+
+.week-day:active {
+  transform: scale(0.92);
+}
+
+.week-day.selected-day {
+  background: rgba(168, 85, 247, 0.16);
+  box-shadow: inset 0 0 0 1px rgba(168, 85, 247, 0.45);
+}
+
+.week-day.selected-day .day-label {
+  color: #ffffff;
+}
+
+/* Messaggio centrato "Nessun allenamento registrato." */
+.empty-day-message {
+  text-align: center;
+  padding: 64px 20px;
+  color: var(--text-muted);
+  font-size: 15px;
+  font-weight: 600;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 20px;
+  backdrop-filter: blur(24px);
+  margin-top: 12px;
+}
+
+.btn-back-today {
+  margin-top: 16px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+  padding: 9px 16px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* Righe in sola lettura per il riepilogo settimanale */
+.set-row.readonly-row {
+  grid-template-columns: 32px 1fr 40px;
+}
+
+.readonly-values {
+  font-size: 14px;
+  font-weight: 700;
+  color: #ffffff;
+}
