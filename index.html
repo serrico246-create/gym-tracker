@@ -2,102 +2,114 @@
 <html lang="it">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <meta name="theme-color" content="#161426">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#070709">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>Workout Pro</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
-  <link rel="manifest" href="manifest.json">
 </head>
 <body>
-  <div class="app-container">
-    
-    <!-- Navigazione principale (Scheda / Calendario) -->
-    <header class="main-nav-bar">
-      <button class="nav-view-btn active" data-view="workout">Allenamento</button>
-      <button class="nav-view-btn" data-view="calendar">Calendario</button>
-    </header>
 
-    <!-- ================= VISTA ALLENAMENTO ================= -->
-    <div id="view-workout" class="view-section">
-      <div class="app-header">
+  <div class="app-container">
+    <!-- Navigazione Principale -->
+    <nav class="main-nav-bar">
+      <button class="nav-view-btn active" data-view="workout">🏋️‍♂️ Allenamento</button>
+      <button class="nav-view-btn" data-view="calendar">📅 Calendario</button>
+    </nav>
+
+    <!-- VISTA 1: ALLENAMENTO -->
+    <div id="view-workout">
+      <header class="app-header">
         <div>
           <span class="subtitle">SCHEDA ATTIVA</span>
           <h1 id="day-title">Giorno 1</h1>
         </div>
         <div class="header-actions">
           <button id="start-workout" class="btn-start">⚡ Inizia</button>
-          <button id="reset-day" class="btn-reset">Reset</button>
         </div>
-      </div>
+      </header>
 
-      <!-- Tracker Settimanale (L M M G V S D) -->
+      <!-- Tracker Settimanale L-D -->
       <div class="week-tracker">
-        <div class="week-day" data-day-index="0"><span>L</span><div class="status-ring"></div></div>
-        <div class="week-day" data-day-index="1"><span>M</span><div class="status-ring"></div></div>
-        <div class="week-day" data-day-index="2"><span>M</span><div class="status-ring"></div></div>
-        <div class="week-day" data-day-index="3"><span>G</span><div class="status-ring"></div></div>
-        <div class="week-day" data-day-index="4"><span>V</span><div class="status-ring"></div></div>
-        <div class="week-day" data-day-index="5"><span>S</span><div class="status-ring"></div></div>
-        <div class="week-day" data-day-index="6"><span>D</span><div class="status-ring"></div></div>
+        <div class="week-day"><span class="day-label">L</span><div class="status-ring"></div></div>
+        <div class="week-day"><span class="day-label">M</span><div class="status-ring"></div></div>
+        <div class="week-day"><span class="day-label">M</span><div class="status-ring"></div></div>
+        <div class="week-day"><span class="day-label">G</span><div class="status-ring"></div></div>
+        <div class="week-day"><span class="day-label">V</span><div class="status-ring"></div></div>
+        <div class="week-day"><span class="day-label">S</span><div class="status-ring"></div></div>
+        <div class="week-day"><span class="day-label">D</span><div class="status-ring"></div></div>
       </div>
 
-      <!-- Selettore Giorni Scheda -->
-      <nav class="day-tabs" id="day-tabs">
+      <!-- Selettore Giorno Scheda -->
+      <div class="day-tabs" id="day-tabs">
+        <div class="tab-indicator" id="tab-indicator"></div>
         <button class="tab-btn active" data-day="day1">GG 1</button>
         <button class="tab-btn" data-day="day2">GG 2</button>
         <button class="tab-btn" data-day="day3">GG 3</button>
         <button class="tab-btn" data-day="day4">GG 4</button>
-        <div class="tab-indicator" id="tab-indicator"></div>
-      </nav>
-
-      <!-- Barra di Progresso -->
-      <div class="progress-bar-container">
-        <div class="progress-fill" id="progress-fill"></div>
       </div>
 
-      <!-- Contenitore Esercizi -->
-      <main id="exercises-list" class="exercises-container"></main>
-    </div>
-
-    <!-- ================= VISTA CALENDARIO ================= -->
-    <div id="view-calendar" class="view-section hidden">
-      <div class="calendar-header">
-        <button id="prev-month" class="cal-nav-btn">‹</button>
-        <h2 id="calendar-month-title">Mese Anno</h2>
-        <button id="next-month" class="cal-nav-btn">›</button>
+      <!-- Barra Progresso -->
+      <div class="progress-container">
+        <div class="progress-bar">
+          <div class="progress-fill" id="progress-fill"></div>
+        </div>
       </div>
 
-      <!-- Griglia dei giorni della settimana -->
-      <div class="calendar-weekdays">
-        <span>Lun</span><span>Mar</span><span>Mer</span><span>Gio</span><span>Ven</span><span>Sab</span><span>Dom</span>
-      </div>
+      <!-- Lista Esercizi -->
+      <main id="exercises-list" class="exercises-list"></main>
 
-      <!-- Griglia dei giorni del mese -->
-      <div class="calendar-grid" id="calendar-grid"></div>
-
-      <!-- Dettaglio allenamento del giorno selezionato -->
-      <div class="calendar-detail-card" id="calendar-detail">
-        <h3>Seleziona un giorno</h3>
-        <p class="cal-placeholder">Tocca una data verde o passata per vedere i carichi registrati.</p>
+      <!-- Azioni di Fine Allenamento -->
+      <div class="workout-footer-actions">
+        <button id="save-workout" class="btn-save-workout">✓ Salva Allenamento</button>
+        <button id="cancel-workout" class="btn-cancel-workout">✕ Annulla Allenamento</button>
       </div>
     </div>
 
+    <!-- VISTA 2: CALENDARIO E STORICO -->
+    <div id="view-calendar" class="hidden">
+      <div class="calendar-card">
+        <div class="calendar-header">
+          <button id="prev-month" class="cal-nav-btn">‹</button>
+          <h2 id="calendar-month-title">Mese Anno</h2>
+          <button id="next-month" class="cal-nav-btn">›</button>
+        </div>
+        <div class="calendar-weekdays">
+          <span>L</span><span>M</span><span>M</span><span>G</span><span>V</span><span>S</span><span>D</span>
+        </div>
+        <div id="calendar-grid" class="calendar-grid"></div>
+      </div>
+
+      <!-- Riepilogo Dettagliato Giorno Selezionato -->
+      <div id="calendar-detail" class="calendar-detail-card">
+        <p class="cal-placeholder">Tocca un giorno sul calendario per vedere tutti gli esercizi, i carichi, le ripetizioni e il confronto con l'allenamento precedente.</p>
+      </div>
+    </div>
   </div>
 
   <!-- Barra Timer Recupero Flottante -->
   <div id="rest-timer" class="timer-bar hidden">
     <div class="timer-info">
-      <span class="timer-dot"></span>
-      <span>Recupero: <strong id="timer-display">01:30</strong></span>
+      <span class="timer-label">RECUPERO</span>
+      <span id="timer-display" class="timer-digits">01:30</span>
     </div>
     <div class="timer-controls">
-      <button id="timer-add">+15s</button>
-      <button id="timer-skip" class="skip">Salta</button>
+      <button id="timer-add" class="timer-btn">+15s</button>
+      <button id="timer-skip" class="timer-btn skip">Salta</button>
     </div>
   </div>
 
   <script src="app.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js');
+    }
+  </script>
 </body>
 </html>
