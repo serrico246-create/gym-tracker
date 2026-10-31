@@ -12,31 +12,31 @@ const WORKOUT_PLAN = {
     ]
   },
   day2: {
-    title: "Giorno 2 · Dorso -Tricipiti - Quadricipiti",
+    title: "Giorno 2 · Dorso - Tricipiti - Quadricipiti",
     exercises: [
       { id: "d2_e1", name: "Lat Machine", sets: 4, reps: "10", rest: 60 },
       { id: "d2_e2", name: "Pulley Basso", sets: 4, reps: "10", rest: 60 },
-      { id: "d2_e3", name: "Hig Row", sets: 4, reps: "10", rest: 60 },
-      { id: "d2_e4", name: "Dip", sets: 4, reps: "10", rest: 60 ,}
-      { id: "d1_e5", name: "French Press", sets: 4, reps: "10", rest: 60 },
-      { id: "d1_e6", name: "Push Down", sets: 4, reps: "10", rest: 60 },
-      { id: "d1_e7", name: "Leg Extension Singola", sets: 4, reps: "10", rest: 60 }
+      { id: "d2_e3", name: "High Row", sets: 4, reps: "10", rest: 60 },
+      { id: "d2_e4", name: "Dip", sets: 4, reps: "10", rest: 60 },
+      { id: "d2_e5", name: "French Press", sets: 4, reps: "10", rest: 60 },
+      { id: "d2_e6", name: "Push Down", sets: 4, reps: "10", rest: 60 },
+      { id: "d2_e7", name: "Leg Extension Singola", sets: 4, reps: "10", rest: 60 }
     ]
   },
   day3: {
     title: "Giorno 3 · Spalle - Glutei",
     exercises: [
       { id: "d3_e1", name: "Arnold Press", sets: 4, reps: "10", rest: 60 },
-      { id: "d3_e2", name: "Alazate Alternate", sets: 4, reps: "10", rest: 60 },
+      { id: "d3_e2", name: "Alzate Alternate", sets: 4, reps: "10", rest: 60 },
       { id: "d3_e3", name: "Alzate Laterali al Cavo", sets: 4, reps: "10", rest: 60 },
       { id: "d3_e4", name: "Leg Press", sets: 4, reps: "10", rest: 60 },
-      { id: "d1_e5", name: "Squat", sets: 4, reps: "10", rest: 60 }
+      { id: "d3_e5", name: "Squat", sets: 4, reps: "10", rest: 60 }
     ]
   },
   day4: {
     title: "Giorno 4 · Richiamo Generale",
     exercises: [
-      { id: "d4_e1", name: "Richiamo Generale", rest: 60 }
+      { id: "d4_e1", name: "Richiamo Generale", sets: 1, simpleCheck: true }
     ]
   }
 };
@@ -99,7 +99,6 @@ function updateWeekUI() {
     if (status === 'green') el.classList.add('active-green');
   });
 
-  // Se l'allenamento di oggi è già iniziato (arancione) o salvato (verde), nascondi il tasto Inizia
   const todayIdx = getTodayIndex();
   if (weekStatus[todayIdx] === 'orange' || weekStatus[todayIdx] === 'green') {
     startBtn.classList.add('fade-out');
@@ -108,7 +107,6 @@ function updateWeekUI() {
   }
 }
 
-// Calcola la barra di progresso e controlla se tutte le serie sono completate
 function updateProgressAndAutoCheck() {
   const dayData = WORKOUT_PLAN[currentDay];
   const todayRecord = ensureTodayRecord();
@@ -118,7 +116,8 @@ function updateProgressAndAutoCheck() {
   let completedSets = 0;
 
   dayData.exercises.forEach(ex => {
-    for (let s = 1; s <= ex.sets; s++) {
+    const numSets = ex.simpleCheck ? 1 : (ex.sets || 4);
+    for (let s = 1; s <= numSets; s++) {
       totalSets++;
       const key = `${ex.id}_s${s}`;
       if (currentSavedSets[key] && currentSavedSets[key].done) {
@@ -132,7 +131,6 @@ function updateProgressAndAutoCheck() {
 
   const todayIdx = getTodayIndex();
 
-  // Se l'utente spunta il 100% degli esercizi, diventa verde e salva in automatico
   if (totalSets > 0 && completedSets === totalSets) {
     weekStatus[todayIdx] = 'green';
     todayRecord.saved = true;
@@ -147,7 +145,6 @@ function updateProgressAndAutoCheck() {
   updateWeekUI();
 }
 
-// Cerca l'allenamento salvato precedente dello stesso Giorno X per mostrare i pesi di riferimento
 function getPreviousWorkoutForDay(dayKey, excludeDateKey) {
   const sortedDates = Object.keys(workoutHistory)
     .filter(d => d < excludeDateKey && workoutHistory[d].dayType === dayKey && workoutHistory[d].saved)
@@ -168,7 +165,6 @@ function renderDay(dayKey) {
   todayRecord.dayType = dayKey;
   const currentSavedSets = todayRecord.sets;
 
-  // Recupera i pesi della sessione precedente dello stesso giorno per usarli come suggerimento (placeholder)
   const prevRecord = getPreviousWorkoutForDay(dayKey, todayKey);
 
   dayData.exercises.forEach((ex, idx) => {
@@ -176,14 +172,38 @@ function renderDay(dayKey) {
     card.className = 'exercise-card';
     card.style.animationDelay = `${idx * 0.05}s`;
 
+    // Caso Giorno 4: Casella singola cliccabile senza kg e rep
+    if (ex.simpleCheck) {
+      const key = `${ex.id}_s1`;
+      const entry = currentSavedSets[key] || { done: false };
+
+      card.innerHTML = `
+        <div class="card-header" style="margin-bottom: 10px;">
+          <div class="exercise-title">${ex.name}</div>
+        </div>
+        <div class="sets-list">
+          <div class="set-row simple-check-row ${entry.done ? 'done' : ''}" data-key="${key}" data-simple="true">
+            <span class="simple-check-label">Segna allenamento come completato</span>
+            <button class="check-btn" aria-label="Completa allenamento">✓</button>
+          </div>
+        </div>
+      `;
+      exercisesListEl.appendChild(card);
+      return;
+    }
+
+    // Caso normale (Giorni 1, 2, 3)
+    const numSets = ex.sets || 4;
+    const targetReps = ex.reps || "10";
     let setsHTML = '';
-    for (let s = 1; s <= ex.sets; s++) {
+
+    for (let s = 1; s <= numSets; s++) {
       const key = `${ex.id}_s${s}`;
       const entry = currentSavedSets[key] || { weight: '', reps: '', done: false };
       const prevSet = prevRecord && prevRecord.sets && prevRecord.sets[key] ? prevRecord.sets[key] : null;
 
       const weightPlaceholder = prevSet && prevSet.weight ? prevSet.weight : '0';
-      const repsPlaceholder = prevSet && prevSet.reps ? prevSet.reps : ex.reps;
+      const repsPlaceholder = prevSet && prevSet.reps ? prevSet.reps : targetReps;
 
       setsHTML += `
         <div class="set-row ${entry.done ? 'done' : ''}" data-key="${key}" data-rest="${ex.rest}">
@@ -205,7 +225,7 @@ function renderDay(dayKey) {
       <div class="card-header">
         <div class="exercise-title">${ex.name}</div>
         <div class="exercise-meta">
-          <span class="badge target">${ex.sets} × ${ex.reps}</span>
+          <span class="badge target">${numSets} × ${targetReps}</span>
           <span class="badge">Rec ${ex.rest}s</span>
         </div>
       </div>
@@ -222,7 +242,8 @@ function renderDay(dayKey) {
 function attachRowListeners() {
   document.querySelectorAll('.set-row').forEach(row => {
     const key = row.dataset.key;
-    const restTime = parseInt(row.dataset.rest, 10);
+    const isSimple = row.dataset.simple === 'true';
+    const restTime = parseInt(row.dataset.rest || '0', 10);
     const todayRecord = ensureTodayRecord();
     const currentSavedSets = todayRecord.sets;
 
@@ -240,7 +261,6 @@ function attachRowListeners() {
       currentSavedSets[key].done = !currentSavedSets[key].done;
       row.classList.toggle('done', currentSavedSets[key].done);
 
-      // Se l'utente spunta una serie ma non aveva premuto "Inizia", avvia comunque lo stato arancione
       const todayIdx = getTodayIndex();
       if (!weekStatus[todayIdx]) {
         weekStatus[todayIdx] = 'orange';
@@ -252,14 +272,15 @@ function attachRowListeners() {
       updateProgressAndAutoCheck();
 
       if (currentSavedSets[key].done) {
-        startRestTimer(restTime);
+        if (!isSimple && restTime > 0) {
+          startRestTimer(restTime);
+        }
         if (navigator.vibrate) navigator.vibrate(50);
       }
     });
   });
 }
 
-// 1. PULSANTE "INIZIA": Bollino diventa ARANCIONE e il tasto sparisce
 startBtn.addEventListener('click', () => {
   const todayIdx = getTodayIndex();
   weekStatus[todayIdx] = 'orange';
@@ -275,7 +296,6 @@ startBtn.addEventListener('click', () => {
   if (navigator.vibrate) navigator.vibrate([40, 40, 40]);
 });
 
-// 2. PULSANTE "SALVA ALLENAMENTO": Salva tutto a prescindere dalle serie completate e mette il bollino VERDE
 document.getElementById('save-workout').addEventListener('click', () => {
   const todayIdx = getTodayIndex();
   const todayRecord = ensureTodayRecord();
@@ -283,26 +303,33 @@ document.getElementById('save-workout').addEventListener('click', () => {
   todayRecord.dayType = currentDay;
   todayRecord.saved = true;
 
-  // Assicura che ogni input scritto anche senza spunta verde venga registrato
   document.querySelectorAll('.set-row').forEach(row => {
     const key = row.dataset.key;
-    const weightVal = row.querySelector('input[data-field="weight"]').value;
-    const repsVal = row.querySelector('input[data-field="reps"]').value;
+    const isSimple = row.dataset.simple === 'true';
     const isDone = row.classList.contains('done');
+
+    if (isSimple) {
+      todayRecord.sets[key] = { done: true };
+      return;
+    }
+
+    const weightInput = row.querySelector('input[data-field="weight"]');
+    const repsInput = row.querySelector('input[data-field="reps"]');
+    const weightVal = weightInput ? weightInput.value : '';
+    const repsVal = repsInput ? repsInput.value : '';
 
     if (!todayRecord.sets[key]) {
       todayRecord.sets[key] = { weight: '', reps: '', done: false };
     }
     todayRecord.sets[key].weight = weightVal;
     todayRecord.sets[key].reps = repsVal;
-    // Se ha inserito kg o rep ma ha dimenticato la spunta, la consideriamo svolta nel salvataggio
     todayRecord.sets[key].done = isDone || (weightVal !== '' || repsVal !== '');
   });
 
   if (workoutStartTime) {
     todayRecord.durationSeconds = Math.max(60, Math.floor((Date.now() - workoutStartTime) / 1000));
   } else if (!todayRecord.durationSeconds) {
-    todayRecord.durationSeconds = 2700; // Default 45 min se non aveva premuto Inizia
+    todayRecord.durationSeconds = 2700;
   }
 
   weekStatus[todayIdx] = 'green';
@@ -314,7 +341,6 @@ document.getElementById('save-workout').addEventListener('click', () => {
   alert('Allenamento salvato nello storico del calendario!');
 });
 
-// 3. PULSANTE "ANNULLA ALLENAMENTO": Azzera l'allenamento di oggi e riporta il bollino BIANCO
 document.getElementById('cancel-workout').addEventListener('click', () => {
   const conferma = confirm("Vuoi davvero annullare l'allenamento di oggi? Il bollino tornerà bianco e i dati inseriti oggi verranno rimossi.");
   if (!conferma) return;
@@ -335,7 +361,6 @@ document.getElementById('cancel-workout').addEventListener('click', () => {
   updateWeekUI();
 });
 
-// Navigazione Viste (Allenamento <-> Calendario)
 document.querySelectorAll('.nav-view-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.nav-view-btn').forEach(b => b.classList.remove('active'));
@@ -352,7 +377,6 @@ document.querySelectorAll('.nav-view-btn').forEach(btn => {
   });
 });
 
-// Griglia Calendario Mensile
 function renderCalendar() {
   const grid = document.getElementById('calendar-grid');
   const monthTitle = document.getElementById('calendar-month-title');
@@ -413,7 +437,6 @@ function renderCalendar() {
   }
 }
 
-// RIEPILOGO COMPLETO NEL CALENDARIO (Ogni esercizio, ogni serie, Kg, Rep e Progresso/Regresso)
 function showDayDetail(dateKey) {
   const detailContainer = document.getElementById('calendar-detail');
   const record = workoutHistory[dateKey];
@@ -434,14 +457,12 @@ function showDayDetail(dateKey) {
   const dayPlan = WORKOUT_PLAN[dayKey];
   const planName = dayPlan ? dayPlan.title : "Allenamento";
 
-  // Durata
   let durationText = "⏱️ N/D";
   if (record.durationSeconds && record.durationSeconds > 0) {
     const mins = Math.max(1, Math.round(record.durationSeconds / 60));
     durationText = `⏱️ ${mins} min`;
   }
 
-  // Cerca l'allenamento precedente dello stesso giorno per calcolare il progresso/regresso
   const prevRecord = getPreviousWorkoutForDay(dayKey, dateKey);
 
   let html = `
@@ -457,15 +478,33 @@ function showDayDetail(dateKey) {
 
   if (dayPlan && dayPlan.exercises) {
     dayPlan.exercises.forEach(ex => {
+      if (ex.simpleCheck) {
+        const setKey = `${ex.id}_s1`;
+        const isDone = record.saved || (record.sets && record.sets[setKey] && record.sets[setKey].done);
+        html += `
+          <div class="cal-ex-card">
+            <div class="cal-ex-title">
+              <span>${ex.name}</span>
+            </div>
+            <div class="cal-set-row">
+              <span class="cal-set-values">${isDone ? '✓ Sessione completata' : 'Non completato'}</span>
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      const numSets = ex.sets || 4;
+      const targetReps = ex.reps || "10";
       html += `
         <div class="cal-ex-card">
           <div class="cal-ex-title">
             <span>${ex.name}</span>
-            <span style="font-size:11px; color:#9ca3af;">Target: ${ex.sets}×${ex.reps}</span>
+            <span style="font-size:11px; color:#9ca3af;">Target: ${numSets}×${targetReps}</span>
           </div>
       `;
 
-      for (let s = 1; s <= ex.sets; s++) {
+      for (let s = 1; s <= numSets; s++) {
         const setKey = `${ex.id}_s${s}`;
         const setData = (record.sets && record.sets[setKey]) ? record.sets[setKey] : null;
         const prevSetData = (prevRecord && prevRecord.sets && prevRecord.sets[setKey]) ? prevRecord.sets[setKey] : null;
@@ -474,7 +513,6 @@ function showDayDetail(dateKey) {
         const r = setData && setData.reps !== '' ? parseInt(setData.reps, 10) : null;
         const wasDone = setData && (setData.done || w !== null || r !== null);
 
-        // Calcolo confronto Progresso / Regresso rispetto alla volta precedente
         let diffBadge = '';
         if (wasDone && prevSetData && prevSetData.weight !== '') {
           const prevW = parseFloat(prevSetData.weight);
@@ -582,6 +620,5 @@ tabBtns.forEach((btn, index) => {
   });
 });
 
-// Avvio iniziale
 renderDay(currentDay);
 updateWeekUI();
