@@ -38,14 +38,14 @@ const WORKOUT_PLAN = {
 };
 
 let currentDay = localStorage.getItem('active_day') || 'day1';
-let workoutHistory = JSON.parse(localStorage.getItem('gym_workout_history')) || {}; 
+let workoutHistory = JSON.parse(localStorage.getItem('gym_workout_history')) || {};
 let weekStatus = JSON.parse(localStorage.getItem('gym_week_status')) || {};
 let timerInterval = null;
 let remainingSeconds = 0;
 
-// Gestione cronometro allenamento
-let workoutStartTime = null;
-let workoutTimerInterval = null;
+let workoutStartTime = localStorage.getItem('gym_current_start_time')
+  ? parseInt(localStorage.getItem('gym_current_start_time'), 10)
+  : null;
 
 let currentDate = new Date();
 
@@ -57,28 +57,34 @@ const timerBar = document.getElementById('rest-timer');
 const timerDisplay = document.getElementById('timer-display');
 const progressFill = document.getElementById('progress-fill');
 const weekDays = document.querySelectorAll('.week-day');
+const startBtn = document.getElementById('start-workout');
 
 function getTodayKey() {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-function getSavedDataForToday() {
+function getTodayIndex() {
+  const day = new Date().getDay();
+  return day === 0 ? 6 : day - 1;
+}
+
+function ensureTodayRecord() {
   const todayKey = getTodayKey();
   if (!workoutHistory[todayKey]) {
-    workoutHistory[todayKey] = { dayType: currentDay, sets: {}, durationSeconds: 0 };
+    workoutHistory[todayKey] = {
+      dayType: currentDay,
+      sets: {},
+      durationSeconds: 0,
+      saved: false
+    };
   }
-  return workoutHistory[todayKey].sets;
+  return workoutHistory[todayKey];
 }
 
 function saveState() {
   localStorage.setItem('gym_workout_history', JSON.stringify(workoutHistory));
   localStorage.setItem('gym_week_status', JSON.stringify(weekStatus));
-}
-
-function getTodayIndex() {
-  const day = new Date().getDay();
-  return day === 0 ? 6 : day - 1;
 }
 
 function updateWeekUI() {
@@ -88,11 +94,22 @@ function updateWeekUI() {
     if (status === 'orange') el.classList.add('active-orange');
     if (status === 'green') el.classList.add('active-green');
   });
+
+  // Se l'allenamento di oggi è già iniziato (arancione) o salvato (verde), nascondi il tasto Inizia
+  const todayIdx = getTodayIndex();
+  if (weekStatus[todayIdx] === 'orange' || weekStatus[todayIdx] === 'green') {
+    startBtn.classList.add('fade-out');
+  } else {
+    startBtn.classList.remove('fade-out');
+  }
 }
 
-function checkDayCompletion() {
+// Calcola la barra di progresso e controlla se tutte le serie sono completate
+function updateProgressAndAutoCheck() {
   const dayData = WORKOUT_PLAN[currentDay];
-  const currentSavedSets = getSavedDataForToday();
+  const todayRecord = ensureTodayRecord();
+  const currentSavedSets = todayRecord.sets;
+
   let totalSets = 0;
   let completedSets = 0;
 
@@ -110,19 +127,29 @@ function checkDayCompletion() {
   progressFill.style.width = `${percent}%`;
 
   const todayIdx = getTodayIndex();
+
+  // Se l'utente spunta il 100% degli esercizi, diventa verde e salva in automatico
   if (totalSets > 0 && completedSets === totalSets) {
     weekStatus[todayIdx] = 'green';
-    // Se completato, ferma il conteggio del tempo e salva la durata
-    if (workoutStartTime) {
-      const elapsedSec = Math.floor((Date.now() - workoutStartTime) / 1000);
-      workoutHistory[getTodayKey()].durationSeconds = elapsedSec;
-      saveState();
+    todayRecord.saved = true;
+    if (workoutStartTime && !todayRecord.durationSeconds) {
+      todayRecord.durationSeconds = Math.max(60, Math.floor((Date.now() - workoutStartTime) / 1000));
     }
-  } else if (weekStatus[todayIdx] === 'green' && completedSets < totalSets) {
+  } else if (!todayRecord.saved && weekStatus[todayIdx] === 'green') {
     weekStatus[todayIdx] = 'orange';
   }
+
   saveState();
   updateWeekUI();
+}
+
+// Cerca l'allenamento salvato precedente dello stesso Giorno X per mostrare i pesi di riferimento
+function getPreviousWorkoutForDay(dayKey, excludeDateKey) {
+  const sortedDates = Object.keys(workoutHistory)
+    .filter(d => d < excludeDateKey && workoutHistory[d].dayType === dayKey && workoutHistory[d].saved)
+    .sort((a, b) => b.localeCompare(a));
+
+  return sortedDates.length > 0 ? workoutHistory[sortedDates[0]] : null;
 }
 
 function renderDay(dayKey) {
@@ -133,32 +160,36 @@ function renderDay(dayKey) {
   exercisesListEl.innerHTML = '';
 
   const todayKey = getTodayKey();
-  if (!workoutHistory[todayKey]) {
-    workoutHistory[todayKey] = { dayType: dayKey, sets: {}, durationSeconds: 0 };
-  } else {
-    workoutHistory[todayKey].dayType = dayKey;
-  }
-  const currentSavedSets = workoutHistory[todayKey].sets;
+  const todayRecord = ensureTodayRecord();
+  todayRecord.dayType = dayKey;
+  const currentSavedSets = todayRecord.sets;
+
+  // Recupera i pesi della sessione precedente dello stesso giorno per usarli come suggerimento (placeholder)
+  const prevRecord = getPreviousWorkoutForDay(dayKey, todayKey);
 
   dayData.exercises.forEach((ex, idx) => {
     const card = document.createElement('div');
-    card.className = `exercise-card`;
+    card.className = 'exercise-card';
     card.style.animationDelay = `${idx * 0.05}s`;
 
     let setsHTML = '';
     for (let s = 1; s <= ex.sets; s++) {
       const key = `${ex.id}_s${s}`;
       const entry = currentSavedSets[key] || { weight: '', reps: '', done: false };
+      const prevSet = prevRecord && prevRecord.sets && prevRecord.sets[key] ? prevRecord.sets[key] : null;
+
+      const weightPlaceholder = prevSet && prevSet.weight ? prevSet.weight : '0';
+      const repsPlaceholder = prevSet && prevSet.reps ? prevSet.reps : ex.reps;
 
       setsHTML += `
         <div class="set-row ${entry.done ? 'done' : ''}" data-key="${key}" data-rest="${ex.rest}">
           <span class="set-num">#${s}</span>
           <div class="input-box">
-            <input type="number" step="0.5" placeholder="0" value="${entry.weight}" data-field="weight">
+            <input type="number" step="0.5" placeholder="${weightPlaceholder}" value="${entry.weight}" data-field="weight">
             <span>kg</span>
           </div>
           <div class="input-box">
-            <input type="number" placeholder="${ex.reps}" value="${entry.reps}" data-field="reps">
+            <input type="number" placeholder="${repsPlaceholder}" value="${entry.reps}" data-field="reps">
             <span>rep</span>
           </div>
           <button class="check-btn" aria-label="Completa serie">✓</button>
@@ -181,14 +212,15 @@ function renderDay(dayKey) {
   });
 
   attachRowListeners();
-  checkDayCompletion();
+  updateProgressAndAutoCheck();
 }
 
 function attachRowListeners() {
   document.querySelectorAll('.set-row').forEach(row => {
     const key = row.dataset.key;
     const restTime = parseInt(row.dataset.rest, 10);
-    const currentSavedSets = getSavedDataForToday();
+    const todayRecord = ensureTodayRecord();
+    const currentSavedSets = todayRecord.sets;
 
     row.querySelectorAll('input').forEach(input => {
       input.addEventListener('input', () => {
@@ -203,8 +235,17 @@ function attachRowListeners() {
       if (!currentSavedSets[key]) currentSavedSets[key] = { weight: '', reps: '', done: false };
       currentSavedSets[key].done = !currentSavedSets[key].done;
       row.classList.toggle('done', currentSavedSets[key].done);
+
+      // Se l'utente spunta una serie ma non aveva premuto "Inizia", avvia comunque lo stato arancione
+      const todayIdx = getTodayIndex();
+      if (!weekStatus[todayIdx]) {
+        weekStatus[todayIdx] = 'orange';
+        workoutStartTime = Date.now();
+        localStorage.setItem('gym_current_start_time', workoutStartTime);
+      }
+
       saveState();
-      checkDayCompletion();
+      updateProgressAndAutoCheck();
 
       if (currentSavedSets[key].done) {
         startRestTimer(restTime);
@@ -214,7 +255,83 @@ function attachRowListeners() {
   });
 }
 
-// Navigazione viste
+// 1. PULSANTE "INIZIA": Bollino diventa ARANCIONE e il tasto sparisce
+startBtn.addEventListener('click', () => {
+  const todayIdx = getTodayIndex();
+  weekStatus[todayIdx] = 'orange';
+  workoutStartTime = Date.now();
+  localStorage.setItem('gym_current_start_time', workoutStartTime);
+
+  const todayRecord = ensureTodayRecord();
+  todayRecord.dayType = currentDay;
+
+  saveState();
+  updateWeekUI();
+
+  if (navigator.vibrate) navigator.vibrate([40, 40, 40]);
+});
+
+// 2. PULSANTE "SALVA ALLENAMENTO": Salva tutto a prescindere dalle serie completate e mette il bollino VERDE
+document.getElementById('save-workout').addEventListener('click', () => {
+  const todayIdx = getTodayIndex();
+  const todayRecord = ensureTodayRecord();
+
+  todayRecord.dayType = currentDay;
+  todayRecord.saved = true;
+
+  // Assicura che ogni input scritto anche senza spunta verde venga registrato
+  document.querySelectorAll('.set-row').forEach(row => {
+    const key = row.dataset.key;
+    const weightVal = row.querySelector('input[data-field="weight"]').value;
+    const repsVal = row.querySelector('input[data-field="reps"]').value;
+    const isDone = row.classList.contains('done');
+
+    if (!todayRecord.sets[key]) {
+      todayRecord.sets[key] = { weight: '', reps: '', done: false };
+    }
+    todayRecord.sets[key].weight = weightVal;
+    todayRecord.sets[key].reps = repsVal;
+    // Se ha inserito kg o rep ma ha dimenticato la spunta, la consideriamo svolta nel salvataggio
+    todayRecord.sets[key].done = isDone || (weightVal !== '' || repsVal !== '');
+  });
+
+  if (workoutStartTime) {
+    todayRecord.durationSeconds = Math.max(60, Math.floor((Date.now() - workoutStartTime) / 1000));
+  } else if (!todayRecord.durationSeconds) {
+    todayRecord.durationSeconds = 2700; // Default 45 min se non aveva premuto Inizia
+  }
+
+  weekStatus[todayIdx] = 'green';
+  saveState();
+  renderDay(currentDay);
+  updateWeekUI();
+
+  if (navigator.vibrate) navigator.vibrate([60, 50, 100]);
+  alert('Allenamento salvato nello storico del calendario!');
+});
+
+// 3. PULSANTE "ANNULLA ALLENAMENTO": Azzera l'allenamento di oggi e riporta il bollino BIANCO
+document.getElementById('cancel-workout').addEventListener('click', () => {
+  const conferma = confirm("Vuoi davvero annullare l'allenamento di oggi? Il bollino tornerà bianco e i dati inseriti oggi verranno rimossi.");
+  if (!conferma) return;
+
+  const todayIdx = getTodayIndex();
+  const todayKey = getTodayKey();
+
+  delete weekStatus[todayIdx];
+  delete workoutHistory[todayKey];
+  workoutStartTime = null;
+  localStorage.removeItem('gym_current_start_time');
+
+  clearInterval(timerInterval);
+  timerBar.classList.add('hidden');
+
+  saveState();
+  renderDay(currentDay);
+  updateWeekUI();
+});
+
+// Navigazione Viste (Allenamento <-> Calendario)
 document.querySelectorAll('.nav-view-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.nav-view-btn').forEach(b => b.classList.remove('active'));
@@ -226,6 +343,7 @@ document.querySelectorAll('.nav-view-btn').forEach(btn => {
 
     if (view === 'calendar') {
       renderCalendar();
+      showDayDetail(getTodayKey());
     }
   });
 });
@@ -262,15 +380,17 @@ function renderCalendar() {
     const dateKey = `${year}-${formattedMonth}-${formattedDay}`;
 
     const dayRecord = workoutHistory[dateKey];
-    let isCompleted = false;
-    if (dayRecord && dayRecord.sets) {
-      const setsArr = Object.values(dayRecord.sets);
-      if (setsArr.length > 0 && setsArr.every(s => s.done)) {
-        isCompleted = true;
+    let isSavedWorkout = false;
+
+    if (dayRecord) {
+      const setsArr = dayRecord.sets ? Object.values(dayRecord.sets) : [];
+      const allDone = setsArr.length > 0 && setsArr.every(s => s.done);
+      if (dayRecord.saved || allDone) {
+        isSavedWorkout = true;
       }
     }
 
-    if (isCompleted) {
+    if (isSavedWorkout) {
       dayCell.classList.add('completed');
     }
 
@@ -280,6 +400,8 @@ function renderCalendar() {
     }
 
     dayCell.addEventListener('click', () => {
+      document.querySelectorAll('.cal-day').forEach(c => c.style.outline = 'none');
+      dayCell.style.outline = '2px solid #a855f7';
       showDayDetail(dateKey);
     });
 
@@ -287,66 +409,110 @@ function renderCalendar() {
   }
 }
 
-// Mostra il riepilogo interattivo dettagliato del giorno selezionato
+// RIEPILOGO COMPLETO NEL CALENDARIO (Ogni esercizio, ogni serie, Kg, Rep e Progresso/Regresso)
 function showDayDetail(dateKey) {
   const detailContainer = document.getElementById('calendar-detail');
   const record = workoutHistory[dateKey];
 
-  if (!record || !record.sets || Object.keys(record.sets).length === 0) {
+  if (!record || (!record.saved && (!record.sets || Object.keys(record.sets).length === 0))) {
     detailContainer.innerHTML = `
-      <h3>Data: ${dateKey}</h3>
-      <p class="cal-placeholder">Nessun allenamento registrato in questa data.</p>
+      <div class="cal-detail-header">
+        <div>
+          <div class="cal-detail-title">Data: ${dateKey}</div>
+        </div>
+      </div>
+      <p class="cal-placeholder">Nessun allenamento salvato in questa data.</p>
     `;
     return;
   }
 
-  const planName = WORKOUT_PLAN[record.dayType] ? WORKOUT_PLAN[record.dayType].title : "Allenamento";
-  
-  // Calcola la durata formattata
-  let durationText = "Durata non registrata";
+  const dayKey = record.dayType || 'day1';
+  const dayPlan = WORKOUT_PLAN[dayKey];
+  const planName = dayPlan ? dayPlan.title : "Allenamento";
+
+  // Durata
+  let durationText = "⏱️ N/D";
   if (record.durationSeconds && record.durationSeconds > 0) {
-    const mins = Math.floor(record.durationSeconds / 60);
-    durationText = `⏱️ ${mins} minuti`;
+    const mins = Math.max(1, Math.round(record.durationSeconds / 60));
+    durationText = `⏱️ ${mins} min`;
   }
+
+  // Cerca l'allenamento precedente dello stesso giorno per calcolare il progresso/regresso
+  const prevRecord = getPreviousWorkoutForDay(dayKey, dateKey);
 
   let html = `
-    <div class="cal-workout-header">
-      <h3>${dateKey}</h3>
-      <span class="cal-duration-badge">${durationText}</span>
+    <div class="cal-detail-header">
+      <div>
+        <div class="cal-detail-title">${dateKey}</div>
+        <div class="cal-detail-sub">${planName}</div>
+      </div>
+      <span class="cal-duration-pill">${durationText}</span>
     </div>
-    <div style="font-size: 13px; font-weight:700; color:var(--text-main); margin-bottom: 12px;">${planName}</div>
-    <div style="display:flex; flex-direction:column; gap:12px; max-height: 250px; overflow-y: auto;">
+    <div style="max-height: 360px; overflow-y: auto; padding-right: 4px;">
   `;
 
-  // Raggruppa le serie per esercizio
-  const exerciseData = {};
-  for (const [key, val] of Object.entries(record.sets)) {
-    if (!val.weight && !val.reps) continue;
-    const exId = key.split('_s')[0];
-    const setNum = key.split('_s')[1];
+  if (dayPlan && dayPlan.exercises) {
+    dayPlan.exercises.forEach(ex => {
+      html += `
+        <div class="cal-ex-card">
+          <div class="cal-ex-title">
+            <span>${ex.name}</span>
+            <span style="font-size:11px; color:#9ca3af;">Target: ${ex.sets}×${ex.reps}</span>
+          </div>
+      `;
 
-    if (!exerciseData[exId]) {
-      let exName = exId;
-      for (const dKey in WORKOUT_PLAN) {
-        const found = WORKOUT_PLAN[dKey].exercises.find(e => e.id === exId);
-        if (found) { exName = found.name; break; }
+      for (let s = 1; s <= ex.sets; s++) {
+        const setKey = `${ex.id}_s${s}`;
+        const setData = (record.sets && record.sets[setKey]) ? record.sets[setKey] : null;
+        const prevSetData = (prevRecord && prevRecord.sets && prevRecord.sets[setKey]) ? prevRecord.sets[setKey] : null;
+
+        const w = setData && setData.weight !== '' ? parseFloat(setData.weight) : null;
+        const r = setData && setData.reps !== '' ? parseInt(setData.reps, 10) : null;
+        const wasDone = setData && (setData.done || w !== null || r !== null);
+
+        // Calcolo confronto Progresso / Regresso rispetto alla volta precedente
+        let diffBadge = '';
+        if (wasDone && prevSetData && prevSetData.weight !== '') {
+          const prevW = parseFloat(prevSetData.weight);
+          const prevR = parseInt(prevSetData.reps || 0, 10);
+          const currW = w || 0;
+          const currR = r || 0;
+
+          if (currW > prevW) {
+            const diffW = +(currW - prevW).toFixed(1);
+            diffBadge = `<span class="cal-diff-badge up">+${diffW} kg ▲</span>`;
+          } else if (currW < prevW) {
+            const diffW = +(currW - prevW).toFixed(1);
+            diffBadge = `<span class="cal-diff-badge down">${diffW} kg ▼</span>`;
+          } else if (currR > prevR) {
+            diffBadge = `<span class="cal-diff-badge up">+${currR - prevR} rep ▲</span>`;
+          } else if (currR < prevR) {
+            diffBadge = `<span class="cal-diff-badge down">${currR - prevR} rep ▼</span>`;
+          } else {
+            diffBadge = `<span class="cal-diff-badge same">= uguale</span>`;
+          }
+        }
+
+        if (wasDone) {
+          html += `
+            <div class="cal-set-row">
+              <span class="cal-set-num">#${s}</span>
+              <span class="cal-set-values">${w !== null ? w : 0} kg × ${r !== null ? r : 0} rep</span>
+              ${diffBadge}
+            </div>
+          `;
+        } else {
+          html += `
+            <div class="cal-set-row skipped">
+              <span class="cal-set-num">#${s}</span>
+              <span class="cal-set-values">Serie non svolta</span>
+            </div>
+          `;
+        }
       }
-      exerciseData[exId] = { name: exName, sets: [] };
-    }
-    exerciseData[exId].sets.push({ num: setNum, weight: val.weight || 0, reps: val.reps || 0 });
-  }
 
-  for (const exId in exerciseData) {
-    const item = exerciseData[exId];
-    html += `
-      <div class="history-exercise-group">
-        <div class="history-exercise-name">${item.name}</div>
-        <div class="history-sets-grid">
-    `;
-    item.sets.forEach(s => {
-      html += `<div class="history-set-chip">#${s.num}: <strong>${s.weight} kg</strong> × ${s.reps} rep</div>`;
+      html += `</div>`;
     });
-    html += `</div></div>`;
   }
 
   html += `</div>`;
@@ -361,23 +527,6 @@ document.getElementById('prev-month').addEventListener('click', () => {
 document.getElementById('next-month').addEventListener('click', () => {
   currentDate.setMonth(currentDate.getMonth() + 1);
   renderCalendar();
-});
-
-// Azione tasto Inizia: avvia il cronometro e colora di arancione
-document.getElementById('start-workout').addEventListener('click', () => {
-  const todayIdx = getTodayIndex();
-  weekStatus[todayIdx] = 'orange';
-  
-  // Inizia a contare il tempo
-  workoutStartTime = Date.now();
-  
-  saveState();
-  updateWeekUI();
-
-  const startBtn = document.getElementById('start-workout');
-  startBtn.classList.add('fade-out');
-
-  if (navigator.vibrate) navigator.vibrate([40, 40, 40]);
 });
 
 function startRestTimer(seconds) {
@@ -414,14 +563,6 @@ document.getElementById('timer-skip').addEventListener('click', () => {
   timerBar.classList.add('hidden');
 });
 
-document.getElementById('reset-day').addEventListener('click', () => {
-  const currentSavedSets = getSavedDataForToday();
-  Object.keys(currentSavedSets).forEach(k => currentSavedSets[k].done = false);
-  workoutStartTime = Date.now(); // Reset timer durata
-  saveState();
-  renderDay(currentDay);
-});
-
 tabBtns.forEach((btn, index) => {
   if (btn.dataset.day === currentDay) {
     tabBtns.forEach(b => b.classList.remove('active'));
@@ -437,6 +578,6 @@ tabBtns.forEach((btn, index) => {
   });
 });
 
-// Inizializzazione
+// Avvio iniziale
 renderDay(currentDay);
 updateWeekUI();
