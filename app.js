@@ -20,7 +20,7 @@ const WORKOUT_PLAN = {
       { id: "d2_e4", name: "Dip", sets: 4, reps: "10", rest: 60 ,}
       { id: "d1_e5", name: "French Press", sets: 4, reps: "10", rest: 60 },
       { id: "d1_e6", name: "Push Down", sets: 4, reps: "10", rest: 60 },
-      { id: "d1_e7", name: "Leg Extension Singola", sets: 4, reps: "10", rest: 60 },
+      { id: "d1_e7", name: "Leg Extension Singola", sets: 4, reps: "10", rest: 60 }
     ]
   },
   day3: {
@@ -30,7 +30,7 @@ const WORKOUT_PLAN = {
       { id: "d3_e2", name: "Alazate Alternate", sets: 4, reps: "10", rest: 60 },
       { id: "d3_e3", name: "Alzate Laterali al Cavo", sets: 4, reps: "10", rest: 60 },
       { id: "d3_e4", name: "Leg Press", sets: 4, reps: "10", rest: 60 },
-      { id: "d1_e5", name: "Squat", sets: 4, reps: "10", rest: 60 },
+      { id: "d1_e5", name: "Squat", sets: 4, reps: "10", rest: 60 }
     ]
   },
   day4: {
